@@ -1,10 +1,3 @@
-//=============================================
-//=              External Mixins              =
-//============================================/
-
-@import "bootstrap/scss/mixins";
-
-
 // Specified breakpoint
 @mixin media($name) {
   @include media-breakpoint-only($name) {
@@ -41,5 +34,22 @@
   }
   &:-ms-input-placeholder { /* Internet Explorer 10-11 */
     @content;
+  }
+}
+
+
+@mixin debug-map($map) {
+  @at-root {
+    @debug-map {
+      __toString__: inspect($map);
+      __length__: length($map);
+      __depth__: depth($map);
+      __keys__: map-keys($map);
+      __properties__ {
+        @each $key, $value in $map {
+          #{'(' + type-of($value) + ') ' + $key}: inspect($value);
+        }
+      }
+    }
   }
 }

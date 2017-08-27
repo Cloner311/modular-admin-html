@@ -1,26 +1,36 @@
 const path = require('path');
-const cssnano = require('cssnano');
+const webpack = require('webpack');
 const autoprefixer = require('autoprefixer');
 const postcssImport = require('postcss-import');
-const cssvariables = require("postcss-css-variables");
-const customProperties = require("postcss-custom-properties");
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const customProperties = require('postcss-custom-properties');
 
 const config = require('../config');
-const theme = require(config.CLIENT_DIR + '/_common/theme');
+const theme = require(config.CLIENT_DIR + '/_theme/theme');
 
 // Basic properties
 const webpackConfigBase = {
   entry: path.resolve(config.CLIENT_DIR, 'main.js'),
   output: {
     path: config.DIST_DIR,
-    filename: "bundle.js",
+    filename: 'bundle.js',
+    publicPath: process.env.PUBLIC_PATH || "/"
   },
   resolve: {
     extensions: ['.js'],
     modules: [config.NPM_DIR, config.CLIENT_DIR],
+    alias: {
+      jquery: "jquery/src/jquery",
+    }
   },
   devtool: 'source-map',
+  plugins: [
+    new webpack.ProvidePlugin({
+      $: 'jquery',
+      jQuery:   'jquery',
+      Raphael:  'raphael',
+      raphael:  'raphael',
+    })
+  ]
 };
 
 // Loaders configuration
@@ -31,7 +41,12 @@ webpackConfigBase.module.rules = [
     test: /\.js$/,
     exclude: config.NPM_DIR,
     use: [
-      'babel-loader'
+      {
+        loader: 'babel-loader',
+        options: {
+          cacheDirectory: config.TMP_DIR
+        }
+      }
     ]
   },
 
@@ -42,7 +57,8 @@ webpackConfigBase.module.rules = [
       {
         loader: 'style-loader',
         options: {
-          sourceMap: true
+          sourceMap: true,
+          // convertToAbsoluteUrls: true
         }
       },
       {
@@ -50,7 +66,7 @@ webpackConfigBase.module.rules = [
         options: {
           // modules: true,  // This option activates css modules
           importLoaders: 1,
-          sourceMap: true
+          sourceMap: true,
         }
       },
       {
@@ -61,7 +77,7 @@ webpackConfigBase.module.rules = [
             postcssImport(),
             customProperties({
               preserve: true,
-              variables: theme.JS
+              variables: theme.toObject()
             }),
             autoprefixer('last 2 versions', 'ie 10'),
           ]
@@ -73,7 +89,7 @@ webpackConfigBase.module.rules = [
           sourceMap: true,
           includePaths: [
             config.NPM_DIR,
-            config.APP_DIR
+            config.CLIENT_DIR
           ]
         }
       },
@@ -83,11 +99,11 @@ webpackConfigBase.module.rules = [
           multiple: [
             {
               search: '<--themeSCSS-->',
-              replace: theme.SCSS
+              replace: theme.toSCSS()
             },
             {
               search: '<--themeCSS-->',
-              replace: theme.CSS
+              replace: theme.toCSS()
             }
           ]
         }
@@ -96,8 +112,13 @@ webpackConfigBase.module.rules = [
         loader: 'sass-resources-loader',
         options: {
           resources: [
-            config.CLIENT_DIR + '/_common/theme.scss',
-            config.CLIENT_DIR + '/_common/mixins.scss',
+            config.NPM_DIR + '/font-awesome/scss/_variables.scss',
+            config.NPM_DIR + '/font-awesome/scss/_mixins.scss',
+            config.NPM_DIR + '/bootstrap/scss/_functions.scss',
+            config.NPM_DIR + '/bootstrap/scss/_variables.scss',
+            config.NPM_DIR + '/bootstrap/scss/_mixins.scss',
+            config.CLIENT_DIR + '/_theme/variables.scss',
+            config.CLIENT_DIR + '/_common/Util/Mixins.scss',
           ]
         },
       }
@@ -111,7 +132,8 @@ webpackConfigBase.module.rules = [
       {
         loader: 'style-loader',
         options: {
-          sourceMap: true
+          sourceMap: true,
+          convertToAbsoluteUrls: true
         }
       },
       {
